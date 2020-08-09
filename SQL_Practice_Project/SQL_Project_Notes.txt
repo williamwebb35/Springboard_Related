@@ -1,0 +1,297 @@
+usefull thread for running SQL locally:
+
+https://dscareercommunity.springboard.com/t/h4d3jm/i-finished-miniproject-2-sql-project-now-what
+
+
+Q3:
+-calculate < 20% facility monthly maintenance costs
+facilities.monthlymaintenance
+
+-identify fee amounts
+facilities.membercost
+
+SELECT 	facid, 
+	name,
+	membercost,
+	monthlymaintenance
+FROM Facilities
+WHERE  membercost < 0.2 * monthlymaintenance
+
+Q5:
+-new column "cost"? with labels 'cheap' and 'expensive'
+-threshold: >100 monthlymaintenance
+-return name, monthly maintenance, cost
+
+SELECT 	name,
+	 monthlymaintenance,
+
+CASE WHEN monthlymaintenance > 100 THEN 'expensive'
+	ELSE 'cheap' END AS cost_category
+FROM	Facilities
+ORDER BY 3
+	
+Q6 
+get the first and last name of the last member(s)
+who signed up. Do not use the LIMIT clause
+- not sure how to do this w/o using LIMIT ???
+----------------------------------------------------
+SELECT	
+	MAX(joindate),
+	concat(m.firstname, ' ', m.surname) as name
+
+FROM Members m
+
+
+SELECT	
+	firstname,	
+	surname,
+
+	CASE WHEN joindate = MAX(joindate) THEN 'latest'
+		WHEN joindate = MIN(joindate) THEN 
+	
+
+
+
+
+	MAX(joindate)
+	MIN(joindate)
+surname,
+firstname
+
+max = 9/26/12 18:08:45
+min = 7/1/12 0:0:0
+	surname,
+	firstname,
+	joindate,
+	COUNT(joindate)
+
+FROM	Members
+ORDER BY joindate DESC
+
+
+
+Q7 
+assistance from: https://github.com/flocui/spring/blob/master/1520094343_sql_project.sql
+Bookings has facid and memid
+Tennis Court 1 = facid 0
+Tennis Court 2 = facid 1
+
+Members has memid, surname and firstname
+
+Facilities has facid, name (for outputting the name of the court)
+
+SELECT DISTINCT f.name as court
+	
+	--m.surname as members_surname,
+	--m.firstname as members_firstname,
+	concat(m.firstname,' ',m.surname) as name
+
+--CASE WHEN f.name LIKE 'Tennis Court%' THEN members_surname END
+--WHEN m.firstname NOT 'GUEST' THEN members_surname END
+
+FROM Bookings b 
+LEFT JOIN Facilities f
+
+ON b.facid = f.facid 
+
+LEFT JOIN Members m
+ON b.memid = m.memid
+
+WHERE f.name LIKE 'Tennis Court%' 
+ORDER BY name
+
+Q8
+constraints: 2012-09-14, bookings >$30
+Bookings: bookid, starttime, memid, slots
+Facilities: membercost, guestcost, name
+Members: surname, firstname, memid
+include: name of facility, member name (as one column),
+notes: membercost and guestcost as 1/2 hr rates, calculate total cost using 
+slots and membercost or guesstcost 
+'total cost' = b.slots * f.membercost or 'total cost' = b.slots * guestcost
+two joins: facid in Facilities with facid in Bookings,
+memid in Bookings with memid in Members
+
+SELECT
+b.starttime as date,
+concat(m.firstname,' ',m.surname) as name,
+f.name as facility,
+
+
+CASE 	WHEN m.surname ='GUEST'  THEN b.slots * f.guestcost
+	WHEN m.surname != 'GUEST'  THEN b.slots * f.membercost
+	ELSE NULL END AS total_cost 
+
+FROM Bookings b
+LEFT JOIN Facilities f
+ON b.facid = f.facid AND b.starttime LIKE '2012-09-14%'
+
+LEFT JOIN Members m
+ON b.memid = m.memid
+
+
+WHERE (CASE WHEN m.surname ='GUEST' THEN (b.slots * f.guestcost) ELSE (b.slots * f.membercost) END ) > 30 
+
+
+
+ORDER BY total_cost DESC
+
+Q9
+Bookings: bookid, starttime, memid, slots,facid
+Facilities: membercost, guestcost, name,facid
+Members: surname, firstname, memid
+Produce same result as Q8 but use a subquery
+-nest the Bookings - Facilities join within a join of that result with a join with Members
+
+SELECT
+concat(m.firstname,' ',m.surname) as name,
+s.starttime,
+
+
+CASE
+
+	WHEN m.surname ='GUEST'  THEN s.slots * s.guestcost
+	WHEN m.surname != 'GUEST'  THEN s.slots * s.membercost
+	ELSE NULL END AS total_cost
+
+FROM Members m
+
+LEFT JOIN
+
+(SELECT 
+b.starttime as starttime,
+b.memid as memid,
+b.slots as slots,
+f.name as name,
+f.membercost as membercost,
+f.guestcost as guestcost
+
+FROM Bookings b
+LEFT JOIN Facilities f 
+ON b.facid = f.facid
+
+WHERE b.starttime like '2012-09-14%') s
+
+ON m.memid = s.memid
+
+WHERE (CASE WHEN m.surname ='GUEST' THEN (s.slots * s.guestcost) ELSE (s.slots * s.membercost) END ) > 30 
+
+ORDER BY total_cost DESC
+
+Q10
+-facilities with total revenue < 1000 (sum down column - aggregation?)
+-output facility name, total revenue, sorted by revenue
+-consider different costs for guests and members
+
+facilities: facid, membercost, guestcost -for calculating revenue
+bookings: facid, bookid,slots, memid
+
+-memid = 0 = guest
+-caculate new column for cost of each booking: b.slots * f.membercost or
+b.slots * f.guestcost depending on b.memid (0 = guest)
+-try first using a subquery with CASE to establish guest versus member
+-after subquery, perform another CASE statement to calculate cost
+
+SELECT 
+b.starttime as starttime,
+b.memid as memberid
+
+FROM Bookings b
+LEFT JOIN Facilities f
+
+ON b.facid = f.facid
+
+/* calculates cost of each booking depending on membership */
+WHERE (CASE WHEN b.memid = 0 THEN (b.slots * f.guestcost) ELSE (b.slots * f.membercost) END AS cost)  
+
+ORDER BY cost
+----------------------
+-refine results to include facility name and total_earnings only
+---------------------
+
+/* join between inner subquery 's' with facilities on 'facid' to calculate cost based on customer type 'cust_type'
+SELECT
+f.name,
+
+sum(CASE WHEN s.cust_type = 'guest' THEN (s.slots * f.guestcost) ELSE (s.slots * f.membercost) END) AS total_earnings
+
+From Facilities f
+
+INNER JOIN (
+/* subquery for distinguishing guest versus member for each starttime */
+SELECT 
+m.surname,
+b.starttime,
+b.facid,
+b.slots,
+
+CASE WHEN m.surname = 'GUEST' THEN 'guest' ELSE 'member' END AS cust_type
+
+FROM Bookings b
+
+LEFT JOIN Members m
+
+ON b.memid = m.memid ) s /* end subquery named 's' */
+
+ON f.facid = s.facid 
+
+GROUP BY s.facid 
+
+HAVING total_earnings < 1000
+
+
+Excellence: Student downloads the raw data files, sets up a local database, loads in the
+data, and uses a Jupyter notebook to set up a connection and query the data.
+
+1. downloads the raw data files, 
+
+
+2. sets up a local database, 
+
+
+3. loads in the data, 
+
+
+4. uses a Jupyter notebook to set up a connection and query the data
+
+6/12/2019
+Following the suggested steps found in a Springboard Community post for getting the SQL into a notebook:
+Link to the post: https://dscareercommunity.springboard.com/t/h4d3jm/i-finished-miniproject-2-sql-project-now-what 
+1. I first downloaded the file from the cloud based system. It should be a .sql file
+
+2. I installed MySQL. If you don't already have it installed, I found this link very useful: https://www.elated.com/articles/mysql-for-absolute-beginners/ 
+
+3. I installed MySQL workbench
+
+4. Using MySQL workbench, I recreated the database on my local host server under the name country_club. I had to make minor editions to the .sql file I downloaded to achieve this.
+
+5. I then connected to the database on my local server using sqlalchemy. The connection string I used was along the lines:
+
+'mysql+pymysql://user:password@localhost/country_club'
+
+-can't get SQLAlchemy to work because it depends on PyMySQL which will not import. 
+Below is my reply to a post by Andrew Maguire's suggested fix:
+
+Thanks for the suggestion, however that did not work. On my system, I have
+ C:\Python36\Lib\site-packages\pymysql and C:\Python36\Lib\site-packages\PyMySQL-0.9.3.dist-info 
+newly installed following the instructions in the link you provided. But, in my notebook, I still 
+get errors messages ('No module name 'pymysq' and 'No module name PyMySQL') after trying to 
+import either one.
+
+6/13/2019
+-problem solved by using conda (suggested by Andrew Maguire on a subsequent Springboard Community post) to 
+install mypysql
+- I learned about using conda here: http://docs.anaconda.com/anaconda-cloud/user-guide/howto/
+- I used the following command in the conda termina: conda install pymysql
+-I also found the following website usefull for completing a basic operation using SQLAlchemy
+https://towardsdatascience.com/sqlalchemy-python-tutorial-79a577141a91 
+
+
+
+
+
+
+
+
+
+

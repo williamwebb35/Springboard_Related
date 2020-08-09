@@ -1,0 +1,52 @@
+1. High Availability
+	Standalone MySQL Server / Classic MySQL Replication
+
+2. Type and Networking
+	Server Configuration Type
+		Config Type: Development Computer
+	Connectivity
+		TCP/IP
+		Port: 3306
+		X Protocol Port: 33060
+		Open Windows Firewall ports for network access
+		Pipe Name: MYSQL
+		Memory Name: MYSQL
+
+3. Authentication Method
+	Use Strong Password Encryption for Authentication
+
+4. Accounts and Roles
+	MySQL Root Password: DataScience2019
+	MySQL User Accounts
+		MySQL User Account
+			User Name:Bill
+			Host <All Hosts (%)>
+			Role: DB Admin
+			Authentication: MySQL
+			MySQL user credentials:
+				Password: DataScience2019
+
+5. Windows Service
+	Configure MySQL Server as a Windows Service
+	Windows Service Name: MYSQL80
+	Start the MySQL Server at System Startup
+	Run Windows Service as ...
+		Standard System Account
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
